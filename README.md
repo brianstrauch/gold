@@ -1,4 +1,4 @@
-# Gold
+# Gold 🥇
 
 [![Gold](https://img.shields.io/badge/code%20style-gold-yellow)](https://github.com/)
 
