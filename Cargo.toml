@@ -1,0 +1,11 @@
+[package]
+name = "gold"
+version = "0.1.0"
+edition = "2021"
+
+[build-dependencies]
+bindgen = "0.65.1"
+gobuild = "0.1.0-alpha.2"
+
+[dependencies]
+go_parser = { path = "crates/go_parser", version = "0.1.0" }

@@ -1,0 +1,12 @@
+[package]
+name = "go_parser"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+[build-dependencies]
+lalrpop = "0.20.0"
+
+[dependencies]
+lalrpop-util = {version = "0.20.0", features = ["lexer"]}
+regex = "1.8.1"
