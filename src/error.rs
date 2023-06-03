@@ -14,3 +14,24 @@ impl Error {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn to_string() {
+        let error = Error {
+            filename: String::from("main.go"),
+            line: 1,
+            char: 1,
+            check: String::from("SA1000"),
+            message: String::from("error parsing regexp: missing closing ): `(`"),
+        };
+
+        assert_eq!(
+            error.to_string(),
+            String::from("main.go:1:1: error parsing regexp: missing closing ): `(` (SA1000)")
+        );
+    }
+}
