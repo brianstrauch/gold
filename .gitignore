@@ -1,2 +1,3 @@
 target
-test/go-tools
+tests/bin
+tests/go-tools
