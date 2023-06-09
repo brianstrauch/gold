@@ -16,5 +16,5 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - run: cargo build --verbose
-    - run: cargo test --verbose
+    - run: go install honnef.co/go/tools/cmd/staticcheck@latest
+    - run: cargo test

@@ -1,7 +1,4 @@
-use std::{
-    io::{self, Write},
-    process::Command,
-};
+use std::process::Command;
 
 struct Rule {
     check: String,
@@ -10,8 +7,6 @@ struct Rule {
 
 #[test]
 fn staticcheck() {
-    go_install("honnef.co/go/tools/cmd/staticcheck@latest");
-
     let rules = [Rule {
         check: String::from("SA1000"),
         name: String::from("CheckRegexps"),
@@ -41,15 +36,4 @@ fn staticcheck() {
 
         assert_eq!(a, b);
     }
-}
-
-fn go_install(package: &str) {
-    let output = Command::new("go")
-        .arg("install")
-        .arg(package)
-        .output()
-        .expect("failed to install");
-
-    io::stdout().write_all(&output.stdout).unwrap();
-    io::stderr().write_all(&output.stderr).unwrap();
 }
