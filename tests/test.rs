@@ -7,12 +7,6 @@ struct Rule {
 
 #[test]
 fn staticcheck() {
-    Command::new("cargo")
-        .arg("build")
-        .arg("--release")
-        .output()
-        .unwrap();
-
     clone("dominikh", "go-tools");
 
     let rules = [Rule {
@@ -26,7 +20,9 @@ fn staticcheck() {
             rule.name, rule.name
         );
 
-        let output = Command::new("target/release/gold")
+        let output = Command::new("cargo")
+            .arg("run")
+            .arg("--release")
             .arg(&path)
             .output()
             .unwrap();
