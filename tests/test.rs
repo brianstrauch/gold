@@ -1,4 +1,7 @@
-use std::{path::Path, process::Command};
+use std::{
+    io::{self, Write},
+    process::Command,
+};
 
 struct Rule {
     check: String,
@@ -7,7 +10,7 @@ struct Rule {
 
 #[test]
 fn staticcheck() {
-    clone("dominikh", "go-tools");
+    go_install("honnef.co/go/tools/cmd/staticcheck@latest");
 
     let rules = [Rule {
         check: String::from("SA1000"),
@@ -28,9 +31,9 @@ fn staticcheck() {
             .unwrap();
         let a = String::from_utf8(output.stdout).unwrap();
 
-        let output = Command::new("tests/bin/staticcheck")
+        let output = Command::new("staticcheck")
             .arg("-checks")
-            .arg(&rule.check)
+            .arg(rule.check)
             .arg(&path)
             .output()
             .unwrap();
@@ -40,27 +43,13 @@ fn staticcheck() {
     }
 }
 
-fn clone(owner: &str, repo: &str) {
-    let dir = format!("tests/{}", repo);
-
-    if Path::new(&dir).exists() {
-        return;
-    }
-
-    Command::new("git")
-        .arg("clone")
-        .arg(format!("git@github.com:{}/{}.git", owner, repo))
-        .arg(dir)
+fn go_install(package: &str) {
+    let output = Command::new("go")
+        .arg("install")
+        .arg(package)
         .output()
-        .expect("failed to clone go-tools");
+        .expect("failed to install");
 
-    Command::new("go")
-        .arg("build")
-        .arg("-C")
-        .arg("tests/go-tools")
-        .arg("-o")
-        .arg("../bin/staticcheck")
-        .arg("cmd/staticcheck/staticcheck.go")
-        .output()
-        .unwrap();
+    io::stdout().write_all(&output.stdout).unwrap();
+    io::stderr().write_all(&output.stderr).unwrap();
 }

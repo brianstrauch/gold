@@ -1,5 +1,3 @@
 go.work
 go.work.sum
 target
-tests/bin
-tests/go-tools
