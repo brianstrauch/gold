@@ -1,9 +1,14 @@
 use std::{env, path::PathBuf};
 
-extern crate bindgen;
-
 fn main() {
+    println!("cargo:rerun-if-changed=tree-sitter-go/src/parser.c");
     println!("cargo:rerun-if-changed=lib/regexp.go");
+
+    cc::Build::new()
+        .warnings(false)
+        .include("tree-sitter-go/src")
+        .file("tree-sitter-go/src/parser.c")
+        .compile("tree-sitter-go");
 
     gobuild::Build::new()
         .file("lib/regexp.go")

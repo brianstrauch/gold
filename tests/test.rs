@@ -7,18 +7,13 @@ struct Rule {
 
 #[test]
 fn staticcheck() {
-    Command::new("cargo").arg("build").output().unwrap();
-
-    clone("dominikh", "go-tools");
-    Command::new("go")
+    Command::new("cargo")
         .arg("build")
-        .arg("-C")
-        .arg("tests/go-tools")
-        .arg("-o")
-        .arg("../bin/staticcheck")
-        .arg("cmd/staticcheck/staticcheck.go")
+        .arg("--release")
         .output()
         .unwrap();
+
+    clone("dominikh", "go-tools");
 
     let rules = [Rule {
         check: String::from("SA1000"),
@@ -31,7 +26,7 @@ fn staticcheck() {
             rule.name, rule.name
         );
 
-        let output = Command::new("target/debug/gold")
+        let output = Command::new("target/release/gold")
             .arg(&path)
             .output()
             .unwrap();
@@ -39,7 +34,7 @@ fn staticcheck() {
 
         let output = Command::new("tests/bin/staticcheck")
             .arg("-checks")
-            .arg(rule.check)
+            .arg(&rule.check)
             .arg(&path)
             .output()
             .unwrap();
@@ -62,4 +57,14 @@ fn clone(owner: &str, repo: &str) {
         .arg(dir)
         .output()
         .expect("failed to clone go-tools");
+
+    Command::new("go")
+        .arg("build")
+        .arg("-C")
+        .arg("tests/go-tools")
+        .arg("-o")
+        .arg("../bin/staticcheck")
+        .arg("cmd/staticcheck/staticcheck.go")
+        .output()
+        .unwrap();
 }
