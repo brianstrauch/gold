@@ -1,6 +1,9 @@
 mod error;
 mod go;
 
+mod sa1000;
+mod sa1001;
+
 use error::Error;
 use std::{collections::HashMap, fs};
 use tree_sitter::{Language, Node, Parser, Query, QueryCursor};
@@ -73,10 +76,10 @@ impl Linter {
                 }
             }
             "call_expression" => {
-                if let Some(error) = self.sa1000(node) {
+                if let Some(error) = sa1000::run(&self, node) {
                     errors.push(error);
                 }
-                if let Some(error) = self.sa1001(node) {
+                if let Some(error) = sa1001::run(&self, node) {
                     errors.push(error);
                 }
             }
@@ -137,6 +140,3 @@ impl Linter {
         }
     }
 }
-
-mod sa1000;
-mod sa1001;
