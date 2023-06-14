@@ -1,3 +1,5 @@
+use std::fmt::{self, Display};
+
 pub struct Error {
     pub filename: String,
     pub line: usize,
@@ -6,9 +8,10 @@ pub struct Error {
     pub message: String,
 }
 
-impl Error {
-    pub fn to_string(&self) -> String {
-        format!(
+impl Display for Error {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            formatter,
             "{}:{}:{}: {} ({})",
             self.filename, self.line, self.char, self.message, self.check
         )

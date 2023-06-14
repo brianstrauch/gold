@@ -40,7 +40,7 @@ impl Linter {
         let errors = self.walk(tree.root_node());
 
         for error in errors.iter() {
-            println!("{}", error.to_string());
+            println!("{}", error);
         }
 
         errors.is_empty()
@@ -68,7 +68,7 @@ impl Linter {
                 for m in cursor.matches(&query, node, self.source.as_bytes()) {
                     let k = m.captures[0]
                         .node
-                        .utf8_text(&self.source.as_bytes())
+                        .utf8_text(self.source.as_bytes())
                         .unwrap();
                     if let Some(v) = self.eval(m.captures[1].node) {
                         self.variables.insert(String::from(k), v);
@@ -76,10 +76,10 @@ impl Linter {
                 }
             }
             "call_expression" => {
-                if let Some(error) = sa1000::run(&self, node) {
+                if let Some(error) = sa1000::run(self, node) {
                     errors.push(error);
                 }
-                if let Some(error) = sa1001::run(&self, node) {
+                if let Some(error) = sa1001::run(self, node) {
                     errors.push(error);
                 }
             }
@@ -102,14 +102,14 @@ impl Linter {
                     match m.captures.len() {
                         1 => {
                             if let Some(v) = self.eval(m.captures[0].node) {
-                                let k = v.split("/").last().unwrap().to_string();
+                                let k = v.split('/').last().unwrap().to_string();
                                 self.variables.insert(k, v);
                             }
                         }
                         2 => {
                             let k = m.captures[0]
                                 .node
-                                .utf8_text(&self.source.as_bytes())
+                                .utf8_text(self.source.as_bytes())
                                 .unwrap();
                             if let Some(v) = self.eval(m.captures[1].node) {
                                 self.variables.insert(String::from(k), v);
@@ -126,11 +126,11 @@ impl Linter {
             errors.append(&mut self.walk(child));
         }
 
-        return errors;
+        errors
     }
 
     fn eval(&self, node: Node) -> Option<String> {
-        let text = node.utf8_text(&self.source.as_bytes()).ok()?;
+        let text = node.utf8_text(self.source.as_bytes()).ok()?;
 
         match node.kind() {
             "identifier" => self.variables.get(text).cloned(),
