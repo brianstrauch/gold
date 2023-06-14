@@ -7,10 +7,16 @@ struct Rule {
 
 #[test]
 fn staticcheck() {
-    let rules = [Rule {
-        check: String::from("SA1000"),
-        name: String::from("CheckRegexps"),
-    }];
+    let rules = [
+        Rule {
+            check: String::from("SA1000"),
+            name: String::from("CheckRegexps"),
+        },
+        Rule {
+            check: String::from("SA1001"),
+            name: String::from("CheckTemplate"),
+        },
+    ];
 
     for rule in rules {
         let path = format!(

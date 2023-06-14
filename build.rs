@@ -2,7 +2,7 @@ use std::{env, path::PathBuf};
 
 fn main() {
     println!("cargo:rerun-if-changed=tree-sitter-go/src/parser.c");
-    println!("cargo:rerun-if-changed=lib/regexp.go");
+    println!("cargo:rerun-if-changed=lib/go.go");
 
     cc::Build::new()
         .warnings(false)
@@ -10,15 +10,15 @@ fn main() {
         .file("tree-sitter-go/src/parser.c")
         .compile("tree-sitter-go");
 
-    gobuild::Build::new()
-        .file("lib/regexp.go")
-        .compile("regexp");
+    gobuild::Build::new().file("lib/go.go").compile("go");
 
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
 
     bindgen::Builder::default()
-        .header(out_dir.join("libregexp.h").to_str().unwrap())
+        .header(out_dir.join("libgo.h").to_str().unwrap())
         .allowlist_function("RegexpCompile")
+        .allowlist_function("HtmlTemplateNewParse")
+        .allowlist_function("TextTemplateNewParse")
         .allowlist_function("GoFree")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         .generate()
@@ -27,5 +27,5 @@ fn main() {
         .expect("Couldn't write bindings!");
 
     println!("cargo:rustc-link-search=native={}", out_dir.display());
-    println!("cargo:rustc-link-lib=static=regexp");
+    println!("cargo:rustc-link-lib=static=go");
 }
