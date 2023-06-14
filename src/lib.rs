@@ -88,7 +88,7 @@ impl Linter {
                     unsafe { tree_sitter_go() },
                     r#"
                     (import_spec
-                        name: (package_identifier) @k
+                        name: (package_identifier)? @k
                         path: (interpreted_string_literal) @v
                     )
                     "#,
@@ -96,12 +96,23 @@ impl Linter {
                 .unwrap();
 
                 for m in cursor.matches(&query, node, self.source.as_bytes()) {
-                    let k = m.captures[0]
-                        .node
-                        .utf8_text(&self.source.as_bytes())
-                        .unwrap();
-                    if let Some(v) = self.eval(m.captures[1].node) {
-                        self.variables.insert(String::from(k), v);
+                    match m.captures.len() {
+                        1 => {
+                            if let Some(v) = self.eval(m.captures[0].node) {
+                                let k = v.split("/").last().unwrap().to_string();
+                                self.variables.insert(k, v);
+                            }
+                        }
+                        2 => {
+                            let k = m.captures[0]
+                                .node
+                                .utf8_text(&self.source.as_bytes())
+                                .unwrap();
+                            if let Some(v) = self.eval(m.captures[1].node) {
+                                self.variables.insert(String::from(k), v);
+                            }
+                        }
+                        _ => {}
                     }
                 }
             }
@@ -134,8 +145,8 @@ impl Linter {
             r#"
             (call_expression
                 function: (selector_expression
-                    operand: (identifier) @a (.eq? @a "regexp")
-                    field: (field_identifier) @b (.match? @b "^(Compile|Match|MatchReader|MatchString|MustCompile)$")
+                    operand: (identifier) @package
+                    field: (field_identifier) @a (.match? @a "^(Compile|Match|MatchReader|MatchString|MustCompile)$")
                 )
                 arguments: (argument_list . [(identifier) (interpreted_string_literal) (raw_string_literal)] @expr)
             )
@@ -146,13 +157,18 @@ impl Linter {
         let mut cursor = QueryCursor::new();
         cursor.set_max_start_depth(1);
 
-        let idx = query.capture_index_for_name("expr")? as usize;
-        let node = cursor
+        let captures = cursor
             .matches(&query, call_expression, self.source.as_bytes())
             .next()?
-            .captures[idx]
-            .node;
+            .captures;
 
+        let idx = query.capture_index_for_name("package")? as usize;
+        if self.eval(captures[idx].node)? != "regexp" {
+            return None;
+        }
+
+        let idx = query.capture_index_for_name("expr")? as usize;
+        let node = captures[idx].node;
         let expr = self.eval(node)?;
         let err = go::regexp_compile(expr)?;
 
