@@ -12,3 +12,4 @@ A fast linter for Go, written in Rust.
 
 * [SA1000](https://staticcheck.io/docs/checks#SA1000)
 * [SA1001](https://staticcheck.io/docs/checks#SA1001)
+* [SA1002](https://staticcheck.io/docs/checks#SA1002)
