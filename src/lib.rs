@@ -3,6 +3,7 @@ mod go;
 
 mod sa1000;
 mod sa1001;
+mod sa1002;
 
 use error::Error;
 use std::{collections::HashMap, fs};
@@ -80,6 +81,9 @@ impl Linter {
                     errors.push(error);
                 }
                 if let Some(error) = sa1001::run(self, node) {
+                    errors.push(error);
+                }
+                if let Some(error) = sa1002::run(self, node) {
                     errors.push(error);
                 }
             }

@@ -46,3 +46,18 @@ pub fn text_template_new_parse(expr: String) -> Option<String> {
 
     None
 }
+
+pub fn time_parse(expr: String) -> Option<String> {
+    let expr = CString::new(expr).unwrap();
+
+    unsafe {
+        let str = CStr::from_ptr(TimeParse(expr.as_ptr() as *mut c_char));
+        let err = String::from_utf8_lossy(str.to_bytes()).to_string();
+        GoFree(str.as_ptr() as *mut c_char);
+        if !err.is_empty() {
+            return Some(err);
+        }
+    }
+
+    None
+}

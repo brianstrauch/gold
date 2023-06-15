@@ -16,6 +16,10 @@ fn staticcheck() {
             check: String::from("SA1001"),
             name: String::from("CheckTemplate"),
         },
+        Rule {
+            check: String::from("SA1002"),
+            name: String::from("CheckTimeParse"),
+        },
     ];
 
     for rule in rules {

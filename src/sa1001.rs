@@ -6,24 +6,24 @@ use crate::{error::Error, go, tree_sitter_go, Linter};
 // https://staticcheck.io/docs/checks#SA1001
 pub fn run(linter: &Linter, call_expression: Node) -> Option<Error> {
     let query = Query::new(
-            unsafe { tree_sitter_go() },
-            r#"
-            (call_expression
-                function: (selector_expression
-                    operand: (call_expression
-                        function: (selector_expression
-                            operand: (identifier) @package
-                            field: (field_identifier) @a (.eq? @a "New")
-                        )
-                        arguments: (argument_list [(identifier) (interpreted_string_literal) (raw_string_literal)])
+        unsafe { tree_sitter_go() },
+        r#"
+        (call_expression
+            function: (selector_expression
+                operand: (call_expression
+                    function: (selector_expression
+                        operand: (identifier) @package
+                        field: (field_identifier) @a (.eq? @a "New")
                     )
-                    field: (field_identifier) @b (.eq? @b "Parse")
+                    arguments: (argument_list [(identifier) (interpreted_string_literal) (raw_string_literal)])
                 )
-                arguments: (argument_list [(identifier) (interpreted_string_literal) (raw_string_literal)] @expr)
+                field: (field_identifier) @b (.eq? @b "Parse")
             )
-            "#,
+            arguments: (argument_list [(identifier) (interpreted_string_literal) (raw_string_literal)] @expr)
         )
-        .unwrap();
+        "#,
+    )
+    .unwrap();
 
     let mut cursor = QueryCursor::new();
     cursor.set_max_start_depth(1);
