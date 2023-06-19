@@ -4,8 +4,8 @@ use tree_sitter::Point;
 
 pub struct Error {
     pub filename: String,
-    pub point: Point,
-    pub check: String,
+    pub position: Point,
+    pub rule: String,
     pub message: String,
 }
 
@@ -15,10 +15,10 @@ impl Display for Error {
             formatter,
             "{}:{}:{}: {} ({})",
             self.filename,
-            self.point.row + 1,
-            self.point.column + 1,
+            self.position.row + 1,
+            self.position.column + 1,
             self.message,
-            self.check
+            self.rule
         )
     }
 }
@@ -31,14 +31,14 @@ mod tests {
     fn to_string() {
         let error = Error {
             filename: String::from("main.go"),
-            point: Point { row: 0, column: 0 },
-            check: String::from("G0000"),
+            position: Point { row: 0, column: 0 },
+            rule: String::from("SA1000"),
             message: String::from("error parsing regexp: missing closing ): `(`"),
         };
 
         assert_eq!(
             error.to_string(),
-            String::from("main.go:1:1: error parsing regexp: missing closing ): `(` (G0000)")
+            String::from("main.go:1:1: error parsing regexp: missing closing ): `(` (SA1000)")
         );
     }
 }

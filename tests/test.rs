@@ -2,8 +2,8 @@ use pretty_assertions::assert_eq;
 use std::{fs, process::Command};
 
 #[test]
-fn integration() {
-    for rule in ["SA1000"] {
+fn test() {
+    for rule in ["G0000", "SA1000"] {
         let golden = fs::read_to_string(format!("tests/{rule}.golden")).unwrap();
 
         let output = Command::new("cargo")

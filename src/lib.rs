@@ -85,6 +85,11 @@ impl Linter {
                     errors.push(error);
                 }
             }
+            "parameter_list" => {
+                if let Some(error) = rules::G0000::run(self, node) {
+                    errors.push(error);
+                }
+            }
             "import_spec" => {
                 let mut cursor = QueryCursor::new();
                 cursor.set_max_start_depth(1);

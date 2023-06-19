@@ -11,7 +11,7 @@ pub fn run(linter: &Linter, call_expression: Node) -> Option<Error> {
         (call_expression
             function: (selector_expression
                 operand: (identifier) @package
-                field: (field_identifier) @a (.match? @a "^(Compile|Match|MatchReader|MatchString|MustCompile)$")
+                field: (field_identifier) @f (.match? @f "^(Compile|Match|MatchReader|MatchString|MustCompile)$")
             )
             arguments: (argument_list . {STRING} @expr)
         )
@@ -27,20 +27,18 @@ pub fn run(linter: &Linter, call_expression: Node) -> Option<Error> {
         .next()?
         .captures;
 
-    let idx = query.capture_index_for_name("package")? as usize;
-    if linter.eval(captures[idx].node)? != "regexp" {
+    if linter.eval(captures[0].node)? != "regexp" {
         return None;
     }
 
-    let idx = query.capture_index_for_name("expr")? as usize;
-    let node = captures[idx].node;
+    let node = captures[2].node;
     let expr = linter.eval(node)?;
     let err = go::regexp_compile(expr)?;
 
     Some(Error {
         filename: linter.filename.clone(),
-        point: node.start_position(),
-        check: String::from("SA1000"),
+        position: node.start_position(),
+        rule: String::from("SA1000"),
         message: err,
     })
 }

@@ -10,4 +10,5 @@ A fast linter for Go, written in Rust.
 
 ## Rules
 
+* G0000
 * [SA1000](https://staticcheck.io/docs/checks#SA1000)
