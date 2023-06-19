@@ -1,11 +1,12 @@
+#![allow(non_snake_case)]
+
 mod error;
 mod go;
-
-mod sa1000;
-mod sa1001;
-mod sa1002;
+mod query;
+mod rules;
 
 use error::Error;
+use query::STRING;
 use std::{collections::HashMap, fs};
 use tree_sitter::{Language, Node, Parser, Query, QueryCursor};
 
@@ -41,7 +42,7 @@ impl Linter {
         let errors = self.walk(tree.root_node());
 
         for error in errors.iter() {
-            println!("{}", error);
+            println!("{error}");
         }
 
         errors.is_empty()
@@ -57,12 +58,15 @@ impl Linter {
 
                 let query = Query::new(
                     unsafe { tree_sitter_go() },
-                    r#"
+                    format!(
+                        r#"
                     (const_declaration (const_spec
                         name: (identifier) @k
-                        value: (expression_list [(interpreted_string_literal) (raw_string_literal)] @v)
+                        value: (expression_list {STRING} @v)
                     ))
-                    "#,
+                    "#
+                    )
+                    .as_str(),
                 )
                 .unwrap();
 
@@ -77,13 +81,7 @@ impl Linter {
                 }
             }
             "call_expression" => {
-                if let Some(error) = sa1000::run(self, node) {
-                    errors.push(error);
-                }
-                if let Some(error) = sa1001::run(self, node) {
-                    errors.push(error);
-                }
-                if let Some(error) = sa1002::run(self, node) {
+                if let Some(error) = rules::SA1000::run(self, node) {
                     errors.push(error);
                 }
             }
@@ -120,6 +118,62 @@ impl Linter {
                             }
                         }
                         _ => {}
+                    }
+                }
+            }
+            "short_var_declaration" => {
+                let mut cursor = QueryCursor::new();
+                cursor.set_max_start_depth(1);
+
+                let query = Query::new(
+                    unsafe { tree_sitter_go() },
+                    format!(
+                        r#"
+                    (short_var_declaration
+                        left: (expression_list (identifier) @k)
+                        right: (expression_list {STRING} @v)
+                    )
+                    "#
+                    )
+                    .as_str(),
+                )
+                .unwrap();
+
+                for m in cursor.matches(&query, node, self.source.as_bytes()) {
+                    let k = m.captures[0]
+                        .node
+                        .utf8_text(self.source.as_bytes())
+                        .unwrap();
+                    if let Some(v) = self.eval(m.captures[1].node) {
+                        self.variables.insert(String::from(k), v);
+                    }
+                }
+            }
+            "var_declaration" => {
+                let mut cursor = QueryCursor::new();
+                cursor.set_max_start_depth(1);
+
+                let query = Query::new(
+                    unsafe { tree_sitter_go() },
+                    format!(
+                        r#"
+                    (var_declaration (var_spec
+                        name: (identifier) @k
+                        value: (expression_list {STRING} @v)
+                    ))
+                    "#
+                    )
+                    .as_str(),
+                )
+                .unwrap();
+
+                for m in cursor.matches(&query, node, self.source.as_bytes()) {
+                    let k = m.captures[0]
+                        .node
+                        .utf8_text(self.source.as_bytes())
+                        .unwrap();
+                    if let Some(v) = self.eval(m.captures[1].node) {
+                        self.variables.insert(String::from(k), v);
                     }
                 }
             }

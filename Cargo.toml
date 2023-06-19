@@ -10,3 +10,6 @@ gobuild = "0.1.0-alpha.2"
 
 [dependencies]
 tree-sitter = { git = "https://github.com/tree-sitter/tree-sitter.git" }
+
+[dev-dependencies]
+pretty_assertions = "1.2.1"

@@ -1,9 +1,10 @@
 use std::fmt::{self, Display};
 
+use tree_sitter::Point;
+
 pub struct Error {
     pub filename: String,
-    pub line: usize,
-    pub char: usize,
+    pub point: Point,
     pub check: String,
     pub message: String,
 }
@@ -13,7 +14,11 @@ impl Display for Error {
         write!(
             formatter,
             "{}:{}:{}: {} ({})",
-            self.filename, self.line, self.char, self.message, self.check
+            self.filename,
+            self.point.row + 1,
+            self.point.column + 1,
+            self.message,
+            self.check
         )
     }
 }
@@ -26,15 +31,14 @@ mod tests {
     fn to_string() {
         let error = Error {
             filename: String::from("main.go"),
-            line: 1,
-            char: 1,
-            check: String::from("SA1000"),
+            point: Point { row: 0, column: 0 },
+            check: String::from("G0000"),
             message: String::from("error parsing regexp: missing closing ): `(`"),
         };
 
         assert_eq!(
             error.to_string(),
-            String::from("main.go:1:1: error parsing regexp: missing closing ): `(` (SA1000)")
+            String::from("main.go:1:1: error parsing regexp: missing closing ): `(` (G0000)")
         );
     }
 }

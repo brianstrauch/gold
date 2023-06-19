@@ -1,21 +1,21 @@
 use tree_sitter::{Node, Query, QueryCursor};
 
-use crate::{error::Error, go, tree_sitter_go, Linter};
+use crate::{error::Error, go, query::STRING, tree_sitter_go, Linter};
 
-// SA1002 - Invalid format in time.Parse
-// https://staticcheck.io/docs/checks#SA1002
+// SA1000 - Invalid regular expression
+// https://staticcheck.io/docs/checks/#SA1000
 pub fn run(linter: &Linter, call_expression: Node) -> Option<Error> {
     let query = Query::new(
         unsafe { tree_sitter_go() },
-        r#"
+        format!(r#"
         (call_expression
             function: (selector_expression
                 operand: (identifier) @package
-                field: (field_identifier) @a (.eq? @a "Parse")
+                field: (field_identifier) @a (.match? @a "^(Compile|Match|MatchReader|MatchString|MustCompile)$")
             )
-            arguments: (argument_list . [(identifier) (interpreted_string_literal) (raw_string_literal)] @expr)
+            arguments: (argument_list . {STRING} @expr)
         )
-        "#,
+        "#).as_str(),
     )
     .unwrap();
 
@@ -28,20 +28,19 @@ pub fn run(linter: &Linter, call_expression: Node) -> Option<Error> {
         .captures;
 
     let idx = query.capture_index_for_name("package")? as usize;
-    if linter.eval(captures[idx].node)? != "time" {
+    if linter.eval(captures[idx].node)? != "regexp" {
         return None;
     }
 
     let idx = query.capture_index_for_name("expr")? as usize;
     let node = captures[idx].node;
-    let expr = linter.eval(node)?.replace("_", " ").replace("Z", "-");
-    let err = go::time_parse(expr)?;
+    let expr = linter.eval(node)?;
+    let err = go::regexp_compile(expr)?;
 
     Some(Error {
         filename: linter.filename.clone(),
-        line: node.start_position().row + 1,
-        char: node.start_position().column + 1,
-        check: String::from("SA1002"),
+        point: node.start_position(),
+        check: String::from("SA1000"),
         message: err,
     })
 }

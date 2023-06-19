@@ -1,6 +1,3 @@
-[submodule "tree-sitter-go"]
-	path = tree-sitter-go
+[submodule "lib/tree-sitter-go"]
+	path = lib/tree-sitter-go
 	url = https://github.com/tree-sitter/tree-sitter-go
-[submodule "tests/go-tools"]
-	path = tests/go-tools
-	url = https://github.com/dominikh/go-tools
