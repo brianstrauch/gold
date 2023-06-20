@@ -1,4 +1,4 @@
-use gold::Linter;
+use gold::lint;
 use std::{env, process::ExitCode};
 
 fn main() -> ExitCode {
@@ -9,7 +9,7 @@ fn main() -> ExitCode {
         return ExitCode::FAILURE;
     }
 
-    if Linter::new(String::from(&args[1])).run() {
+    if lint(String::from(&args[1])) {
         ExitCode::SUCCESS
     } else {
         ExitCode::FAILURE

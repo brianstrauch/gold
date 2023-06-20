@@ -1,23 +1,11 @@
-use tree_sitter::{Node, Query, QueryCursor};
+use tree_sitter::{Node, QueryCursor};
 
-use crate::{error::Error, go, query::STRING, tree_sitter_go, Linter};
+use crate::{error::Error, go, Cache, Linter};
 
 // SA1000 - Invalid regular expression
 // https://staticcheck.io/docs/checks/#SA1000
-pub fn run(linter: &Linter, call_expression: Node) -> Option<Error> {
-    let query = Query::new(
-        unsafe { tree_sitter_go() },
-        format!(r#"
-        (call_expression
-            function: (selector_expression
-                operand: (identifier) @package
-                field: (field_identifier) @f (.match? @f "^(Compile|Match|MatchReader|MatchString|MustCompile)$")
-            )
-            arguments: (argument_list . {STRING} @expr)
-        )
-        "#).as_str(),
-    )
-    .unwrap();
+pub fn run(linter: &Linter, call_expression: Node, cache: &Cache) -> Option<Error> {
+    let query = cache.queries.get("SA1000").unwrap();
 
     let mut cursor = QueryCursor::new();
     cursor.set_max_start_depth(1);

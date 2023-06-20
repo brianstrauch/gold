@@ -6,7 +6,7 @@ A fast linter for Go, written in Rust.
 
 ## Usage
 
-    cargo run --release tests/SA1000.go
+    cargo run --release tests
 
 ## Rules
 

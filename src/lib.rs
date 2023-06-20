@@ -1,5 +1,3 @@
-#![allow(non_snake_case)]
-
 mod error;
 mod go;
 mod query;
@@ -9,9 +7,14 @@ use error::Error;
 use query::STRING;
 use std::{collections::HashMap, fs};
 use tree_sitter::{Language, Node, Parser, Query, QueryCursor};
+use walkdir::WalkDir;
 
 extern "C" {
     fn tree_sitter_go() -> Language;
+}
+
+pub struct Cache {
+    queries: HashMap<String, Query>,
 }
 
 pub struct Linter {
@@ -20,18 +23,132 @@ pub struct Linter {
     variables: HashMap<String, String>,
 }
 
-impl Linter {
-    pub fn new(filename: String) -> Linter {
-        let source = fs::read_to_string(&filename).expect("failed to read file");
+pub fn lint(path: String) -> bool {
+    let mut cache = Cache {
+        queries: HashMap::new(),
+    };
 
-        Linter {
-            filename,
+    cache.queries.insert(
+        String::from("const_declaration"),
+        query::new(
+            format!(
+                r#"
+                    (const_declaration (const_spec
+                        name: (identifier) @k
+                        value: (expression_list {STRING} @v)
+                    ))
+                    "#
+            )
+            .as_str(),
+        ),
+    );
+
+    cache.queries.insert(
+        String::from("import_spec"),
+        query::new(
+            r#"
+                    (import_spec
+                        name: (package_identifier)? @k
+                        path: (interpreted_string_literal) @v
+                    )
+                    "#,
+        ),
+    );
+
+    cache.queries.insert(
+        String::from("short_var_declaration"),
+        query::new(
+            format!(
+                r#"
+                    (short_var_declaration
+                        left: (expression_list (identifier) @k)
+                        right: (expression_list {STRING} @v)
+                    )
+                    "#
+            )
+            .as_str(),
+        ),
+    );
+
+    cache.queries.insert(
+        String::from("var_declaration"),
+        query::new(
+            format!(
+                r#"
+                    (var_declaration (var_spec
+                        name: (identifier) @k
+                        value: (expression_list {STRING} @v)
+                    ))
+                    "#
+            )
+            .as_str(),
+        ),
+    );
+
+    cache.queries.insert(
+        String::from("G0000"),
+        query::new(
+            r#"
+        (parameter_list (parameter_declaration
+            name: (identifier) @name .
+            type: (_) @type
+        ))
+        "#,
+        ),
+    );
+
+    cache.queries.insert(
+        String::from("SA1000"),
+        query::new(
+            format!(r#"
+            (call_expression
+                function: (selector_expression
+                    operand: (identifier) @package
+                    field: (field_identifier) @f (.match? @f "^(Compile|Match|MatchReader|MatchString|MustCompile)$")
+                )
+                arguments: (argument_list . {STRING} @expr)
+            )
+            "#).as_str(),
+        ),
+    );
+
+    if fs::metadata(&path).unwrap().is_dir() {
+        let mut exit = false;
+
+        for file in WalkDir::new(&path)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| is_source_file(e))
+        {
+            let source = fs::read_to_string(file.path()).expect("failed to read file");
+            let mut linter = Linter {
+                filename: file.path().display().to_string(),
+                source,
+                variables: HashMap::new(),
+            };
+            exit &= linter.run(&cache);
+        }
+
+        exit
+    } else {
+        let source = fs::read_to_string(&path).expect("failed to read file");
+
+        let mut linter = Linter {
+            filename: path,
             source,
             variables: HashMap::new(),
-        }
-    }
+        };
 
-    pub fn run(&mut self) -> bool {
+        linter.run(&cache)
+    }
+}
+
+fn is_source_file(entry: &walkdir::DirEntry) -> bool {
+    entry.metadata().unwrap().is_file() && entry.path().display().to_string().ends_with(".go")
+}
+
+impl Linter {
+    pub fn run(&mut self, cache: &Cache) -> bool {
         let mut parser = Parser::new();
         parser
             .set_language(unsafe { tree_sitter_go() })
@@ -39,7 +156,7 @@ impl Linter {
 
         let tree = parser.parse(&self.source, None).expect("failed to parse");
 
-        let errors = self.walk(tree.root_node());
+        let errors = self.walk(tree.root_node(), cache);
 
         for error in errors.iter() {
             println!("{error}");
@@ -48,7 +165,7 @@ impl Linter {
         errors.is_empty()
     }
 
-    fn walk(&mut self, node: Node) -> Vec<Error> {
+    fn walk(&mut self, node: Node, cache: &Cache) -> Vec<Error> {
         let mut errors = Vec::new();
 
         match node.kind() {
@@ -56,19 +173,7 @@ impl Linter {
                 let mut cursor = QueryCursor::new();
                 cursor.set_max_start_depth(1);
 
-                let query = Query::new(
-                    unsafe { tree_sitter_go() },
-                    format!(
-                        r#"
-                    (const_declaration (const_spec
-                        name: (identifier) @k
-                        value: (expression_list {STRING} @v)
-                    ))
-                    "#
-                    )
-                    .as_str(),
-                )
-                .unwrap();
+                let query = cache.queries.get("const_declaration").unwrap();
 
                 for m in cursor.matches(&query, node, self.source.as_bytes()) {
                     let k = m.captures[0]
@@ -81,12 +186,12 @@ impl Linter {
                 }
             }
             "call_expression" => {
-                if let Some(error) = rules::SA1000::run(self, node) {
+                if let Some(error) = rules::SA1000::run(self, node, cache) {
                     errors.push(error);
                 }
             }
             "parameter_list" => {
-                if let Some(error) = rules::G0000::run(self, node) {
+                if let Some(error) = rules::G0000::run(self, node, cache) {
                     errors.push(error);
                 }
             }
@@ -94,16 +199,7 @@ impl Linter {
                 let mut cursor = QueryCursor::new();
                 cursor.set_max_start_depth(1);
 
-                let query = Query::new(
-                    unsafe { tree_sitter_go() },
-                    r#"
-                    (import_spec
-                        name: (package_identifier)? @k
-                        path: (interpreted_string_literal) @v
-                    )
-                    "#,
-                )
-                .unwrap();
+                let query = cache.queries.get("import_spec").unwrap();
 
                 for m in cursor.matches(&query, node, self.source.as_bytes()) {
                     match m.captures.len() {
@@ -130,19 +226,7 @@ impl Linter {
                 let mut cursor = QueryCursor::new();
                 cursor.set_max_start_depth(1);
 
-                let query = Query::new(
-                    unsafe { tree_sitter_go() },
-                    format!(
-                        r#"
-                    (short_var_declaration
-                        left: (expression_list (identifier) @k)
-                        right: (expression_list {STRING} @v)
-                    )
-                    "#
-                    )
-                    .as_str(),
-                )
-                .unwrap();
+                let query = cache.queries.get("short_var_declaration").unwrap();
 
                 for m in cursor.matches(&query, node, self.source.as_bytes()) {
                     let k = m.captures[0]
@@ -158,19 +242,7 @@ impl Linter {
                 let mut cursor = QueryCursor::new();
                 cursor.set_max_start_depth(1);
 
-                let query = Query::new(
-                    unsafe { tree_sitter_go() },
-                    format!(
-                        r#"
-                    (var_declaration (var_spec
-                        name: (identifier) @k
-                        value: (expression_list {STRING} @v)
-                    ))
-                    "#
-                    )
-                    .as_str(),
-                )
-                .unwrap();
+                let query = cache.queries.get("var_declaration").unwrap();
 
                 for m in cursor.matches(&query, node, self.source.as_bytes()) {
                     let k = m.captures[0]
@@ -186,7 +258,7 @@ impl Linter {
         }
 
         for child in node.children(&mut node.walk()) {
-            errors.append(&mut self.walk(child));
+            errors.append(&mut self.walk(child, cache));
         }
 
         errors

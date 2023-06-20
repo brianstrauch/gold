@@ -1,19 +1,10 @@
-use tree_sitter::{Node, Query, QueryCursor};
+use tree_sitter::{Node, QueryCursor};
 
-use crate::{error::Error, tree_sitter_go, Linter};
+use crate::{error::Error, Cache, Linter};
 
 // G0000 - Redundant parameter types
-pub fn run(linter: &Linter, parameter_list: Node) -> Option<Error> {
-    let query = Query::new(
-        unsafe { tree_sitter_go() },
-        r#"
-        (parameter_list (parameter_declaration
-            name: (identifier) @name .
-            type: (type_identifier) @type
-        ))
-        "#,
-    )
-    .unwrap();
+pub fn run(linter: &Linter, parameter_list: Node, cache: &Cache) -> Option<Error> {
+    let query = cache.queries.get("G0000").unwrap();
 
     let mut cursor = QueryCursor::new();
     cursor.set_max_start_depth(1);
