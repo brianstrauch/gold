@@ -10,5 +10,8 @@ A fast linter for Go, written in Rust.
 
 ## Rules
 
-* G0000
-* [SA1000](https://staticcheck.io/docs/checks#SA1000)
+| Rule                        | Description                |
+| --------------------------- | -------------------------- |
+| [G0000](tests/G0000/1.go)   | Redundant parameter types  |
+| [G0001](tests/G0001)        | Unsorted imports           |
+| [SA1000](tests/SA1000/1.go) | Invalid regular expression |

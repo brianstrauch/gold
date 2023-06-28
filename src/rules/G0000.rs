@@ -1,16 +1,18 @@
 use tree_sitter::{Node, QueryCursor};
 
-use crate::{error::Error, Cache, Linter};
+use crate::{error::Error, file_linter::FileLinter};
 
 // G0000 - Redundant parameter types
-pub fn run(linter: &Linter, parameter_list: Node, cache: &Cache) -> Option<Error> {
-    let query = cache.queries.get("G0000").unwrap();
+pub fn run(linter: &FileLinter, node: Node) -> Option<Error> {
+    linter.module_linter.configuration.G0000.as_ref()?;
+
+    let query = linter.module_linter.queries.get("G0000").unwrap();
 
     let mut cursor = QueryCursor::new();
     cursor.set_max_start_depth(1);
 
     let mut last: Option<Node> = None;
-    for m in cursor.matches(&query, parameter_list, linter.source.as_bytes()) {
+    for m in cursor.matches(query, node, linter.source.as_bytes()) {
         let node = m.captures[1].node;
 
         if let Some(last) = last {
@@ -19,7 +21,7 @@ pub fn run(linter: &Linter, parameter_list: Node, cache: &Cache) -> Option<Error
 
             if last_type == node_type {
                 return Some(Error {
-                    filename: linter.filename.clone(),
+                    filename: linter.path.clone(),
                     position: last.start_position(),
                     rule: String::from("G0000"),
                     message: format!(r#"redundant parameter type "{last_type}""#),

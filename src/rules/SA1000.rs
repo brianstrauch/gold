@@ -1,17 +1,19 @@
 use tree_sitter::{Node, QueryCursor};
 
-use crate::{error::Error, go, Cache, Linter};
+use crate::{error::Error, file_linter::FileLinter, go};
 
 // SA1000 - Invalid regular expression
 // https://staticcheck.io/docs/checks/#SA1000
-pub fn run(linter: &Linter, call_expression: Node, cache: &Cache) -> Option<Error> {
-    let query = cache.queries.get("SA1000").unwrap();
+pub fn run(linter: &FileLinter, node: Node) -> Option<Error> {
+    linter.module_linter.configuration.SA1000.as_ref()?;
+
+    let query = linter.module_linter.queries.get("SA1000").unwrap();
 
     let mut cursor = QueryCursor::new();
     cursor.set_max_start_depth(1);
 
     let captures = cursor
-        .matches(&query, call_expression, linter.source.as_bytes())
+        .matches(query, node, linter.source.as_bytes())
         .next()?
         .captures;
 
@@ -24,7 +26,7 @@ pub fn run(linter: &Linter, call_expression: Node, cache: &Cache) -> Option<Erro
     let err = go::regexp_compile(expr)?;
 
     Some(Error {
-        filename: linter.filename.clone(),
+        filename: linter.path.clone(),
         position: node.start_position(),
         rule: String::from("SA1000"),
         message: err,

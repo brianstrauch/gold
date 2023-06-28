@@ -1,0 +1,2 @@
+tests/G0001/2.go:7:2: unsorted import "fmt" (G0001)
+tests/G0001/3.go:6:2: unsorted import "github.com/spf13/pflag" (G0001)

@@ -1,4 +1,4 @@
-package main
+package tests
 
 // Match
 func f1(a string, b string)        {}

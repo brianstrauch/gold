@@ -9,9 +9,12 @@ fn main() -> ExitCode {
         return ExitCode::FAILURE;
     }
 
-    if lint(String::from(&args[1])) {
-        ExitCode::SUCCESS
-    } else {
-        ExitCode::FAILURE
+    match lint(&args[1]) {
+        Ok(true) => ExitCode::SUCCESS,
+        Ok(false) => ExitCode::FAILURE,
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            ExitCode::FAILURE
+        }
     }
 }
