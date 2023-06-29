@@ -1,18 +1,27 @@
-use tree_sitter::{Node, QueryCursor};
+use tree_sitter::{Node, Query, QueryCursor};
 
-use crate::{error::Error, file_linter::FileLinter};
+use crate::{error::Error, file_linter::FileLinter, query};
+
+lazy_static! {
+    static ref QUERY: Query = query::new(
+        r#"
+        (parameter_list (parameter_declaration
+            name: (identifier) @name .
+            type: (_) @type
+        ))
+        "#,
+    );
+}
 
 // G0000 - Redundant parameter types
 pub fn run(linter: &FileLinter, node: Node) -> Option<Error> {
     linter.module_linter.configuration.G0000.as_ref()?;
 
-    let query = linter.module_linter.queries.get("G0000").unwrap();
-
     let mut cursor = QueryCursor::new();
     cursor.set_max_start_depth(1);
 
     let mut last: Option<Node> = None;
-    for m in cursor.matches(query, node, linter.source.as_bytes()) {
+    for m in cursor.matches(&QUERY, node, linter.source.as_bytes()) {
         let node = m.captures[1].node;
 
         if let Some(last) = last {

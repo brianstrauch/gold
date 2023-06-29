@@ -1,8 +1,43 @@
 use std::{collections::HashMap, fs};
 
-use tree_sitter::{Node, Parser, QueryCursor};
+use tree_sitter::{Node, Parser, Query, QueryCursor};
 
-use crate::{error::Error, module_linter::ModuleLinter, rules, tree_sitter_go};
+use crate::{error::Error, module_linter::ModuleLinter, query, rules, tree_sitter_go};
+
+lazy_static! {
+    static ref CONST_DECLARATION_QUERY: Query = query::new(
+        r#"
+        (const_declaration (const_spec
+            name: (identifier) @k
+            value: (expression_list [(identifier) (interpreted_string_literal) (raw_string_literal)] @v)
+        ))
+        "#
+    );
+    static ref IMPORT_SPEC_QUERY: Query = query::new(
+        r#"
+        (import_spec
+            name: (package_identifier)? @k
+            path: (interpreted_string_literal) @v
+        )
+        "#,
+    );
+    static ref SHORT_VAR_DECLARATION_QUERY: Query = query::new(
+        r#"
+        (short_var_declaration
+            left: (expression_list (identifier) @k)
+            right: (expression_list [(identifier) (interpreted_string_literal) (raw_string_literal)] @v)
+        )
+        "#
+    );
+    static ref VAR_DECLARATION_QUERY: Query = query::new(
+        r#"
+        (var_declaration (var_spec
+            name: (identifier) @k
+            value: (expression_list [(identifier) (interpreted_string_literal) (raw_string_literal)] @v)
+        ))
+        "#
+    );
+}
 
 pub struct FileLinter<'a> {
     pub path: String,
@@ -44,9 +79,8 @@ impl<'a> FileLinter<'a> {
             "const_declaration" => {
                 let mut cursor = QueryCursor::new();
                 cursor.set_max_start_depth(1);
-                let query = self.module_linter.queries.get("const_declaration").unwrap();
 
-                for m in cursor.matches(query, node, self.source.as_bytes()) {
+                for m in cursor.matches(&CONST_DECLARATION_QUERY, node, self.source.as_bytes()) {
                     let k = m.captures[0]
                         .node
                         .utf8_text(self.source.as_bytes())
@@ -70,9 +104,7 @@ impl<'a> FileLinter<'a> {
                 let mut cursor = QueryCursor::new();
                 cursor.set_max_start_depth(1);
 
-                let query = self.module_linter.queries.get("import_spec").unwrap();
-
-                for m in cursor.matches(query, node, self.source.as_bytes()) {
+                for m in cursor.matches(&IMPORT_SPEC_QUERY, node, self.source.as_bytes()) {
                     match m.captures.len() {
                         1 => {
                             if let Some(v) = self.eval(m.captures[0].node) {
@@ -102,13 +134,8 @@ impl<'a> FileLinter<'a> {
                 let mut cursor = QueryCursor::new();
                 cursor.set_max_start_depth(1);
 
-                let query = self
-                    .module_linter
-                    .queries
-                    .get("short_var_declaration")
-                    .unwrap();
-
-                for m in cursor.matches(query, node, self.source.as_bytes()) {
+                for m in cursor.matches(&SHORT_VAR_DECLARATION_QUERY, node, self.source.as_bytes())
+                {
                     let k = m.captures[0]
                         .node
                         .utf8_text(self.source.as_bytes())
@@ -122,9 +149,7 @@ impl<'a> FileLinter<'a> {
                 let mut cursor = QueryCursor::new();
                 cursor.set_max_start_depth(1);
 
-                let query = self.module_linter.queries.get("var_declaration").unwrap();
-
-                for m in cursor.matches(query, node, self.source.as_bytes()) {
+                for m in cursor.matches(&VAR_DECLARATION_QUERY, node, self.source.as_bytes()) {
                     let k = m.captures[0]
                         .node
                         .utf8_text(self.source.as_bytes())

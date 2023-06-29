@@ -212,7 +212,7 @@ pub fn run(linter: &FileLinter, node: Node) -> Option<Error> {
             }
         }
 
-        if next_group == None {
+        if next_group.is_none() {
             return Some(Error {
                 filename: linter.path.clone(),
                 position: import_spec.start_position(),

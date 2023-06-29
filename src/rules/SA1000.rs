@@ -1,19 +1,31 @@
-use tree_sitter::{Node, QueryCursor};
+use tree_sitter::{Node, Query, QueryCursor};
 
-use crate::{error::Error, file_linter::FileLinter, go};
+use crate::{error::Error, file_linter::FileLinter, go, query};
+
+lazy_static! {
+    static ref QUERY: Query = query::new(
+        r#"
+        (call_expression
+            function: (selector_expression
+                operand: (identifier) @package
+                field: (field_identifier) @f (.match? @f "^(Compile|Match|MatchReader|MatchString|MustCompile)$")
+            )
+            arguments: (argument_list . [(identifier) (interpreted_string_literal) (raw_string_literal)] @expr)
+        )
+        "#
+    );
+}
 
 // SA1000 - Invalid regular expression
 // https://staticcheck.io/docs/checks/#SA1000
 pub fn run(linter: &FileLinter, node: Node) -> Option<Error> {
     linter.module_linter.configuration.SA1000.as_ref()?;
 
-    let query = linter.module_linter.queries.get("SA1000").unwrap();
-
     let mut cursor = QueryCursor::new();
     cursor.set_max_start_depth(1);
 
     let captures = cursor
-        .matches(query, node, linter.source.as_bytes())
+        .matches(&QUERY, node, linter.source.as_bytes())
         .next()?
         .captures;
 
