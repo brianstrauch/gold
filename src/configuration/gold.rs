@@ -2,15 +2,14 @@
 
 use serde::Deserialize;
 
-#[derive(Default, Deserialize)]
+use super::golangci::GolangciConfiguration;
+
+#[derive(Debug, Default, Deserialize)]
 pub struct Configuration {
     pub G0000: Option<Empty>,
     pub G0001: Option<Vec<String>>,
     pub SA1000: Option<Empty>,
 }
-
-#[derive(Deserialize)]
-pub struct Empty {}
 
 impl Configuration {
     pub fn new() -> Self {
@@ -20,4 +19,15 @@ impl Configuration {
             SA1000: Some(Empty {}),
         }
     }
+
+    pub fn from(golangci_configuration: GolangciConfiguration) -> Self {
+        let mut configuration = Self::new();
+
+        configuration.G0001 = Some(golangci_configuration.linters_settings.gci.sections);
+
+        configuration
+    }
 }
+
+#[derive(Debug, Deserialize)]
+pub struct Empty {}
