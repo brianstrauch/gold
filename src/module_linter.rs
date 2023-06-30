@@ -2,7 +2,7 @@ use crate::{
     configuration::{golangci::GolangciConfiguration, gold::Configuration},
     file_linter::FileLinter,
 };
-use std::path::Path;
+use std::{fs::File, path::Path};
 use walkdir::WalkDir;
 
 pub struct ModuleLinter {
@@ -12,17 +12,20 @@ pub struct ModuleLinter {
 impl ModuleLinter {
     pub fn new() -> Self {
         Self {
-            configuration: Configuration::new(),
+            configuration: Configuration::default(),
         }
     }
 
     pub fn run(mut self, path: &str) -> bool {
-        if let Ok(file) = std::fs::File::open(Path::new(path).join(".gold.yml")) {
+        if let Ok(file) = File::open(Path::new(path).join(".gold.yml")) {
             self.configuration = serde_yaml::from_reader(&file).unwrap();
-        } else if let Ok(file) = std::fs::File::open(Path::new(path).join(".golangci.yml")) {
+        } else if let Ok(file) = File::open(Path::new(path).join(".golangci.yml")) {
+            eprintln!("Using configuration from .golangci.yml");
             let golangci_configuration: GolangciConfiguration =
                 serde_yaml::from_reader(&file).unwrap();
             self.configuration = Configuration::from(golangci_configuration);
+        } else {
+            eprintln!("Could not find .gold.yml, using default configuration");
         }
 
         let mut exit = false;
