@@ -2,7 +2,7 @@ use crate::{
     configuration::{golangci::GolangciConfiguration, gold::Configuration},
     file_linter::FileLinter,
 };
-use std::{fs::File, path::Path};
+use std::{collections::HashSet, fs::File, path::Path};
 use walkdir::WalkDir;
 
 pub struct ModuleLinter {
@@ -11,7 +11,7 @@ pub struct ModuleLinter {
 
 impl ModuleLinter {
     pub fn new() -> Self {
-        Self {
+        ModuleLinter {
             configuration: Configuration::default(),
         }
     }
@@ -21,21 +21,29 @@ impl ModuleLinter {
             self.configuration = serde_yaml::from_reader(&file).unwrap();
         } else if let Ok(file) = File::open(Path::new(path).join(".golangci.yml")) {
             eprintln!("Using configuration from .golangci.yml");
-            let golangci_configuration: GolangciConfiguration =
-                serde_yaml::from_reader(&file).unwrap();
-            self.configuration = Configuration::from(golangci_configuration);
+            let gc: GolangciConfiguration = serde_yaml::from_reader(&file).unwrap();
+            self.configuration = Configuration::from(gc);
         } else {
             eprintln!("Could not find .gold.yml, using default configuration");
         }
 
-        let mut exit = false;
+        let mut ignore = HashSet::new();
+        if let Some(patterns) = &self.configuration.ignore {
+            for pattern in patterns {
+                ignore.insert(Path::new(path).join(pattern));
+            }
+        }
 
-        for file in WalkDir::new(path)
+        let walk_dir = WalkDir::new(path)
             .sort_by_file_name()
             .into_iter()
+            .filter_entry(|entry| !ignore.contains(entry.path()))
             .filter_map(|e| e.ok())
-            .filter(is_source_file)
-        {
+            .filter(is_source_file);
+
+        let mut exit = false;
+
+        for file in walk_dir {
             let mut file_linter = FileLinter::new(&self, file.path().display().to_string());
             exit &= file_linter.run();
         }

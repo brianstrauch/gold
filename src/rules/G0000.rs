@@ -15,7 +15,13 @@ lazy_static! {
 
 // G0000 - Redundant parameter types
 pub fn run(linter: &FileLinter, node: Node) -> Option<Error> {
-    linter.module_linter.configuration.G0000.as_ref()?;
+    if !linter
+        .module_linter
+        .configuration
+        .is_enabled(String::from("G0000"))
+    {
+        return None;
+    }
 
     let mut cursor = QueryCursor::new();
     cursor.set_max_start_depth(1);

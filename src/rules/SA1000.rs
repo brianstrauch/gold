@@ -19,7 +19,13 @@ lazy_static! {
 // SA1000 - Invalid regular expression
 // https://staticcheck.io/docs/checks/#SA1000
 pub fn run(linter: &FileLinter, node: Node) -> Option<Error> {
-    linter.module_linter.configuration.SA1000.as_ref()?;
+    if !linter
+        .module_linter
+        .configuration
+        .is_enabled(String::from("SA1000"))
+    {
+        return None;
+    }
 
     let mut cursor = QueryCursor::new();
     cursor.set_max_start_depth(1);

@@ -168,62 +168,71 @@ lazy_static! {
 
 // G0001 - Unsorted imports
 pub fn run(linter: &FileLinter, node: Node) -> Option<Error> {
-    let sections = &linter.module_linter.configuration.G0001.as_ref()?;
-    let mut sorted_imports: Vec<Vec<&str>> = vec![Vec::new(); sections.len()];
+    if !linter
+        .module_linter
+        .configuration
+        .is_enabled(String::from("G0001"))
+    {
+        return None;
+    }
 
-    let mut curr_group = 0;
+    if let Some(settings) = &linter.module_linter.configuration.settings {
+        let sections = &settings.G0001;
 
-    for import_spec in node.children(&mut node.walk()) {
-        let text = import_spec.utf8_text(linter.source.as_bytes()).unwrap();
+        let mut sorted_imports: Vec<Vec<&str>> = vec![Vec::new(); sections.len()];
 
-        if text == "(" || text == ")" || text == "\n" {
-            continue;
-        }
+        let mut curr_group = 0;
 
-        if text == "\n\n" {
-            curr_group += 1;
-            continue;
-        }
+        for import_spec in node.children(&mut node.walk()) {
+            let text = import_spec.utf8_text(linter.source.as_bytes()).unwrap();
 
-        let import = text.split_whitespace().last().unwrap().trim_matches('"');
-
-        let mut next_group = None;
-
-        for i in curr_group..sections.len() {
-            let rule = sections[i].as_str();
-
-            if rule == "default" {
-                next_group = Some(i);
+            if text == "(" || text == ")" || text == "\n" {
                 continue;
             }
 
-            if rule == "standard" && STANDARD_IMPORTS.contains(import) {
-                next_group = Some(i);
-                break;
+            if text == "\n\n" {
+                curr_group += 1;
+                continue;
             }
 
-            if let Some(captures) = PREFIX_PATTERN.captures(rule) {
-                if let Some(prefix) = captures.get(1) {
-                    if import.starts_with(prefix.as_str()) {
-                        next_group = Some(i);
-                        break;
+            let import = text.split_whitespace().last().unwrap().trim_matches('"');
+
+            let mut next_group = None;
+
+            for (i, rule) in sections.iter().enumerate().skip(curr_group) {
+                if rule == "default" {
+                    next_group = Some(i);
+                    continue;
+                }
+
+                if rule == "standard" && STANDARD_IMPORTS.contains(import) {
+                    next_group = Some(i);
+                    break;
+                }
+
+                if let Some(captures) = PREFIX_PATTERN.captures(rule) {
+                    if let Some(prefix) = captures.get(1) {
+                        if import.starts_with(prefix.as_str()) {
+                            next_group = Some(i);
+                            break;
+                        }
                     }
                 }
             }
+
+            if next_group.is_none() {
+                return Some(Error {
+                    filename: linter.path.clone(),
+                    position: import_spec.start_position(),
+                    rule: String::from("G0001"),
+                    message: format!(r#"unsorted import "{}""#, import),
+                });
+            }
+
+            curr_group = next_group.unwrap();
+
+            sorted_imports[curr_group].push(import);
         }
-
-        if next_group.is_none() {
-            return Some(Error {
-                filename: linter.path.clone(),
-                position: import_spec.start_position(),
-                rule: String::from("G0001"),
-                message: format!(r#"unsorted import "{}""#, import),
-            });
-        }
-
-        curr_group = next_group.unwrap();
-
-        sorted_imports[curr_group].push(import);
     }
 
     None

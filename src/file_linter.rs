@@ -48,7 +48,7 @@ pub struct FileLinter<'a> {
 
 impl<'a> FileLinter<'a> {
     pub fn new(module_linter: &'a ModuleLinter, path: String) -> Self {
-        Self {
+        FileLinter {
             path: path.clone(),
             source: fs::read_to_string(path).unwrap(),
             module_linter,
