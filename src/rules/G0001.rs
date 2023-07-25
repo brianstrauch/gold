@@ -2,7 +2,7 @@ use crate::{error::Error, file_linter::FileLinter, query};
 use regex::Regex;
 use std::collections::HashSet;
 use tree_sitter::{Query, QueryCursor};
-use tree_sitter_edit::Replace;
+use tree_sitter_edit::{NodeId, Replace};
 
 lazy_static! {
     static ref QUERY: Query = query::new("(import_spec_list) @list");
@@ -182,13 +182,13 @@ pub fn run(linter: &mut FileLinter) -> (Vec<Error>, Vec<Replace>) {
         let groups = &settings.G0001;
         let mut errors = vec![];
 
-        let mut sorted_imports: Vec<Vec<&str>> = vec![Vec::new(); groups.len()];
+        let mut sorted_imports: Vec<Vec<String>> = vec![Vec::new(); groups.len()];
         let mut curr = 0;
 
         let mut cursor = QueryCursor::new();
         for m in cursor.matches(&QUERY, linter.tree.root_node(), linter.source.as_bytes()) {
-            let node = m.captures[0].node;
-            for import_spec in node.children(&mut node.walk()) {
+            let list = m.captures[0].node;
+            for import_spec in list.children(&mut list.walk()) {
                 let text = linter.text(import_spec);
 
                 if text == "(" || text == ")" || text == "\n" {
@@ -203,27 +203,43 @@ pub fn run(linter: &mut FileLinter) -> (Vec<Error>, Vec<Replace>) {
                 let import = text.split_whitespace().last().unwrap().trim_matches('"');
 
                 if let Some(group) = index(groups, import) {
-                    sorted_imports[group].push(import);
-                    if group < curr {
+                    sorted_imports[group].push(format!("\t{}", text));
+                    if group < curr && errors.len() == 0 {
                         errors.push(Error {
                             filename: linter.path.clone(),
                             position: import_spec.start_position(),
                             rule: String::from("G0001"),
                             message: format!(r#"unsorted import "{import}""#),
                         });
-                        return (errors, vec![]);
                     }
                     curr = group;
-                } else {
+                } else if errors.len() == 0 {
                     errors.push(Error {
                         filename: linter.path.clone(),
                         position: import_spec.start_position(),
                         rule: String::from("G0001"),
                         message: format!(r#"unclassified import "{import}""#),
                     });
-                    return (errors, vec![]);
                 }
             }
+
+            let mut editors = vec![];
+
+            if errors.len() > 0 {
+                let sections: Vec<String> = sorted_imports
+                    .iter()
+                    .filter(|v| v.len() > 0)
+                    .map(|v| v.join("\n"))
+                    .collect();
+                let out = format!("(\n{}\n)", sections.join("\n\n"));
+
+                editors.push(Replace {
+                    id: NodeId::new(&list),
+                    bytes: out.as_bytes().to_vec(),
+                })
+            }
+
+            return (errors, editors);
         }
     }
 
