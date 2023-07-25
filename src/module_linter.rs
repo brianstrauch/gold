@@ -7,19 +7,21 @@ use walkdir::WalkDir;
 
 pub struct ModuleLinter {
     pub configuration: Configuration,
+    pub fix: bool,
 }
 
 impl ModuleLinter {
-    pub fn new() -> Self {
+    pub fn new(fix: bool) -> Self {
         ModuleLinter {
             configuration: Configuration::default(),
+            fix,
         }
     }
 
-    pub fn run(mut self, path: &str) -> bool {
-        if let Ok(file) = File::open(Path::new(path).join(".gold.yml")) {
+    pub fn run(mut self, dir: &str) -> bool {
+        if let Ok(file) = File::open(Path::new(dir).join(".gold.yml")) {
             self.configuration = serde_yaml::from_reader(&file).unwrap();
-        } else if let Ok(file) = File::open(Path::new(path).join(".golangci.yml")) {
+        } else if let Ok(file) = File::open(Path::new(dir).join(".golangci.yml")) {
             eprintln!("Using configuration from .golangci.yml");
             let gc: GolangciConfiguration = serde_yaml::from_reader(&file).unwrap();
             self.configuration = Configuration::from(gc);
@@ -30,11 +32,11 @@ impl ModuleLinter {
         let mut ignore = HashSet::new();
         if let Some(patterns) = &self.configuration.ignore {
             for pattern in patterns {
-                ignore.insert(Path::new(path).join(pattern));
+                ignore.insert(Path::new(dir).join(pattern));
             }
         }
 
-        let walk_dir = WalkDir::new(path)
+        let walk_dir = WalkDir::new(dir)
             .sort_by_file_name()
             .into_iter()
             .filter_entry(|entry| !ignore.contains(entry.path()))

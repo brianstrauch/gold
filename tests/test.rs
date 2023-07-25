@@ -3,7 +3,7 @@ use std::{fs, process::Command};
 
 #[test]
 fn test() {
-    for rule in ["G0000", "G0001", "SA1000"] {
+    for rule in ["G0000", "G0001"] {
         let golden = fs::read_to_string(format!("tests/{rule}/{rule}.golden")).unwrap();
 
         let output = Command::new("cargo")

@@ -32,13 +32,13 @@ mod tests {
         let error = Error {
             filename: String::from("main.go"),
             position: Point { row: 0, column: 0 },
-            rule: String::from("SA1000"),
-            message: String::from("error parsing regexp: missing closing ): `(`"),
+            rule: String::from("G0000"),
+            message: String::from(r#"redundant parameter type "string""#),
         };
 
         assert_eq!(
             error.to_string(),
-            String::from("main.go:1:1: error parsing regexp: missing closing ): `(` (SA1000)")
+            String::from(r#"main.go:1:1: redundant parameter type "string" (G0000)"#)
         );
     }
 }

@@ -1,9 +1,11 @@
-use crate::{error::Error, file_linter::FileLinter};
+use crate::{error::Error, file_linter::FileLinter, query};
 use regex::Regex;
 use std::collections::HashSet;
-use tree_sitter::Node;
+use tree_sitter::{Query, QueryCursor};
+use tree_sitter_edit::Replace;
 
 lazy_static! {
+    static ref QUERY: Query = query::new("(import_spec_list) @list");
     static ref STANDARD_IMPORTS: HashSet<&'static str> = HashSet::from([
         "archive/tar",
         "archive/zip",
@@ -167,73 +169,93 @@ lazy_static! {
 }
 
 // G0001 - Unsorted imports
-pub fn run(linter: &FileLinter, node: Node) -> Option<Error> {
+pub fn run(linter: &mut FileLinter) -> (Vec<Error>, Vec<Replace>) {
     if !linter
         .module_linter
         .configuration
         .is_enabled(String::from("G0001"))
     {
-        return None;
+        return (vec![], vec![]);
     }
 
     if let Some(settings) = &linter.module_linter.configuration.settings {
-        let sections = &settings.G0001;
+        let groups = &settings.G0001;
+        let mut errors = vec![];
 
-        let mut sorted_imports: Vec<Vec<&str>> = vec![Vec::new(); sections.len()];
+        let mut sorted_imports: Vec<Vec<&str>> = vec![Vec::new(); groups.len()];
+        let mut curr = 0;
 
-        let mut curr_group = 0;
+        let mut cursor = QueryCursor::new();
+        for m in cursor.matches(&QUERY, linter.tree.root_node(), linter.source.as_bytes()) {
+            let node = m.captures[0].node;
+            for import_spec in node.children(&mut node.walk()) {
+                let text = linter.text(import_spec);
 
-        for import_spec in node.children(&mut node.walk()) {
-            let text = import_spec.utf8_text(linter.source.as_bytes()).unwrap();
-
-            if text == "(" || text == ")" || text == "\n" {
-                continue;
-            }
-
-            if text == "\n\n" {
-                curr_group += 1;
-                continue;
-            }
-
-            let import = text.split_whitespace().last().unwrap().trim_matches('"');
-
-            let mut next_group = None;
-
-            for (i, rule) in sections.iter().enumerate().skip(curr_group) {
-                if rule == "default" {
-                    next_group = Some(i);
+                if text == "(" || text == ")" || text == "\n" {
                     continue;
                 }
 
-                if rule == "standard" && STANDARD_IMPORTS.contains(import) {
-                    next_group = Some(i);
-                    break;
+                if text == "\n\n" {
+                    curr += 1;
+                    continue;
                 }
 
-                if let Some(captures) = PREFIX_PATTERN.captures(rule) {
-                    if let Some(prefix) = captures.get(1) {
-                        if import.starts_with(prefix.as_str()) {
-                            next_group = Some(i);
-                            break;
-                        }
+                let import = text.split_whitespace().last().unwrap().trim_matches('"');
+
+                if let Some(group) = index(groups, import) {
+                    sorted_imports[group].push(import);
+                    if group < curr {
+                        errors.push(Error {
+                            filename: linter.path.clone(),
+                            position: import_spec.start_position(),
+                            rule: String::from("G0001"),
+                            message: format!(r#"unsorted import "{import}""#),
+                        });
+                        return (errors, vec![]);
                     }
+                    curr = group;
+                } else {
+                    errors.push(Error {
+                        filename: linter.path.clone(),
+                        position: import_spec.start_position(),
+                        rule: String::from("G0001"),
+                        message: format!(r#"unclassified import "{import}""#),
+                    });
+                    return (errors, vec![]);
                 }
             }
-
-            if next_group.is_none() {
-                return Some(Error {
-                    filename: linter.path.clone(),
-                    position: import_spec.start_position(),
-                    rule: String::from("G0001"),
-                    message: format!(r#"unsorted import "{}""#, import),
-                });
-            }
-
-            curr_group = next_group.unwrap();
-
-            sorted_imports[curr_group].push(import);
         }
     }
 
-    None
+    (vec![], vec![])
+}
+
+fn index(groups: &[String], import: &str) -> Option<usize> {
+    let mut default_group = None;
+    let mut prefix_group = None;
+
+    let mut longest_prefix = 0;
+
+    for (i, rule) in groups.iter().enumerate() {
+        if rule == "standard" && STANDARD_IMPORTS.contains(import) {
+            return Some(i);
+        }
+
+        if rule == "default" {
+            default_group = Some(i);
+            continue;
+        }
+
+        if let Some(captures) = PREFIX_PATTERN.captures(rule) {
+            if let Some(prefix) = captures.get(1) {
+                if import.starts_with(prefix.as_str()) && prefix.len() > longest_prefix {
+                    prefix_group = Some(i);
+                    longest_prefix = prefix.len();
+                    continue;
+                }
+            }
+        }
+    }
+
+    prefix_group.or(default_group)
 }

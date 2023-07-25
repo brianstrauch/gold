@@ -14,4 +14,3 @@ A fast linter for Go, written in Rust.
 | --------------------------- | -------------------------- |
 | [G0000](tests/G0000/1.go)   | Redundant parameter types  |
 | [G0001](tests/G0001)        | Unsorted imports           |
-| [SA1000](tests/SA1000/1.go) | Invalid regular expression |

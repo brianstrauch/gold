@@ -4,16 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 [build-dependencies]
-bindgen = "0.65.1"
 cc = "1.0.79"
-gobuild = "0.1.0-alpha.2"
 
 [dependencies]
 lazy_static = "1.4.0"
 regex = "1.8.4"
 serde = { version = "1.0.164", features = ["derive"] }
 serde_yaml = "0.9.21"
-tree-sitter = { git = "https://github.com/tree-sitter/tree-sitter.git" }
+# tree-sitter = { git = "https://github.com/tree-sitter/tree-sitter.git" }
+tree-sitter = "0.20"
+tree-sitter-edit = "0.3.0"
 walkdir = "2.3.3"
 
 [dev-dependencies]
