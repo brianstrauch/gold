@@ -204,7 +204,7 @@ pub fn run(linter: &mut FileLinter) -> (Vec<Error>, Vec<Replace>) {
 
                 if let Some(group) = index(groups, import) {
                     sorted_imports[group].push(format!("\t{}", text));
-                    if group < curr && errors.len() == 0 {
+                    if group < curr && errors.is_empty() {
                         errors.push(Error {
                             filename: linter.path.clone(),
                             position: import_spec.start_position(),
@@ -213,7 +213,7 @@ pub fn run(linter: &mut FileLinter) -> (Vec<Error>, Vec<Replace>) {
                         });
                     }
                     curr = group;
-                } else if errors.len() == 0 {
+                } else if errors.is_empty() {
                     errors.push(Error {
                         filename: linter.path.clone(),
                         position: import_spec.start_position(),
@@ -225,10 +225,10 @@ pub fn run(linter: &mut FileLinter) -> (Vec<Error>, Vec<Replace>) {
 
             let mut editors = vec![];
 
-            if errors.len() > 0 {
+            if !errors.is_empty() {
                 let sections: Vec<String> = sorted_imports
                     .iter()
-                    .filter(|v| v.len() > 0)
+                    .filter(|v| !v.is_empty())
                     .map(|v| v.join("\n"))
                     .collect();
                 let out = format!("(\n{}\n)", sections.join("\n\n"));
@@ -236,10 +236,10 @@ pub fn run(linter: &mut FileLinter) -> (Vec<Error>, Vec<Replace>) {
                 editors.push(Replace {
                     id: NodeId::new(&list),
                     bytes: out.as_bytes().to_vec(),
-                })
-            }
+                });
 
-            return (errors, editors);
+                return (errors, editors);
+            }
         }
     }
 
