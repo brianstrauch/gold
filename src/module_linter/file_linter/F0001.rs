@@ -1,8 +1,10 @@
-use crate::{error::Error, file_linter::FileLinter, query};
+use crate::{error::Error, query};
 use regex::Regex;
 use std::collections::HashSet;
 use tree_sitter::{Query, QueryCursor};
 use tree_sitter_edit::{NodeId, Replace};
+
+use super::FileLinter;
 
 lazy_static! {
     static ref QUERY: Query = query::new("(import_spec_list) @list");
@@ -170,16 +172,12 @@ lazy_static! {
 
 // G0001 - Unsorted imports
 pub fn run(linter: &mut FileLinter) -> (Vec<Error>, Vec<Replace>) {
-    if !linter
-        .module_linter
-        .configuration
-        .is_enabled(String::from("G0001"))
-    {
+    if !linter.configuration.is_enabled(String::from("F0001")) {
         return (vec![], vec![]);
     }
 
-    if let Some(settings) = &linter.module_linter.configuration.settings {
-        let groups = &settings.G0001;
+    if let Some(settings) = &linter.configuration.settings {
+        let groups = &settings.F0001;
         let mut errors = vec![];
 
         let mut sorted_imports: Vec<Vec<String>> = vec![Vec::new(); groups.len()];
@@ -208,7 +206,7 @@ pub fn run(linter: &mut FileLinter) -> (Vec<Error>, Vec<Replace>) {
                         errors.push(Error {
                             filename: linter.path.clone(),
                             position: import_spec.start_position(),
-                            rule: String::from("G0001"),
+                            rule: String::from("F0001"),
                             message: format!(r#"unsorted import "{import}""#),
                         });
                     }
@@ -217,7 +215,7 @@ pub fn run(linter: &mut FileLinter) -> (Vec<Error>, Vec<Replace>) {
                     errors.push(Error {
                         filename: linter.path.clone(),
                         position: import_spec.start_position(),
-                        rule: String::from("G0001"),
+                        rule: String::from("F0001"),
                         message: format!(r#"unclassified import "{import}""#),
                     });
                 }

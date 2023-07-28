@@ -1,4 +1,4 @@
-package G0001
+package F0001
 
 // Match
 import (

@@ -1,18 +1,24 @@
+#![allow(non_snake_case)]
+
+pub mod F0000;
+pub mod F0001;
+
 use std::fs::{self, File};
 
 use tree_sitter::{Node, Parser, Tree};
 
-use crate::{module_linter::ModuleLinter, rules, tree_sitter_go};
+use crate::{configuration::gold::Configuration, tree_sitter_go};
 
 pub struct FileLinter<'a> {
-    pub module_linter: &'a ModuleLinter,
     pub path: String,
+    pub fix: bool,
+    pub configuration: &'a Configuration,
     pub source: String,
     pub tree: Tree,
 }
 
 impl<'a> FileLinter<'a> {
-    pub fn new(module_linter: &'a ModuleLinter, path: String) -> Self {
+    pub fn new(path: String, fix: bool, configuration: &'a Configuration) -> Self {
         let mut parser = Parser::new();
         parser.set_language(unsafe { tree_sitter_go() }).unwrap();
 
@@ -20,8 +26,9 @@ impl<'a> FileLinter<'a> {
         let tree = parser.parse(&source, None).unwrap();
 
         FileLinter {
-            module_linter,
+            fix,
             path,
+            configuration,
             source,
             tree,
         }
@@ -31,14 +38,14 @@ impl<'a> FileLinter<'a> {
         let mut all_errors = vec![];
         let mut all_editors = vec![];
 
-        let rules = vec![rules::G0000::run, rules::G0001::run];
+        let rules = vec![F0000::run, F0001::run];
         for rule in rules {
             let (errors, editors) = &mut rule(self);
             all_errors.append(errors);
             all_editors.append(editors);
         }
 
-        if self.module_linter.fix {
+        if self.fix {
             for editor in all_editors.iter().rev() {
                 let source = fs::read_to_string(&self.path).unwrap();
                 let mut w = File::create(&self.path).unwrap();

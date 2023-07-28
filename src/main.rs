@@ -3,13 +3,10 @@ extern crate lazy_static;
 
 mod configuration;
 mod error;
-mod file_linter;
 mod module_linter;
 mod query;
-mod rules;
 
-use file_linter::FileLinter;
-use module_linter::ModuleLinter;
+use module_linter::{file_linter::FileLinter, ModuleLinter};
 use std::{env, fs, io, process::ExitCode};
 use tree_sitter::Language;
 
@@ -43,7 +40,11 @@ pub fn lint(path: &str, fix: bool) -> io::Result<bool> {
     if fs::metadata(path)?.is_dir() {
         Ok(module_linter.run(path))
     } else {
-        let mut linter = FileLinter::new(&module_linter, path.to_string());
+        let mut linter = FileLinter::new(
+            path.to_string(),
+            module_linter.fix,
+            &module_linter.configuration,
+        );
         Ok(linter.run())
     }
 }

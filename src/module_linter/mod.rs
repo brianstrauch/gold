@@ -1,9 +1,10 @@
-use crate::{
-    configuration::{golangci::GolangciConfiguration, gold::Configuration},
-    file_linter::FileLinter,
-};
+pub mod file_linter;
+
+use crate::configuration::{golangci::GolangciConfiguration, gold::Configuration};
 use std::{collections::HashSet, fs::File, path::Path};
 use walkdir::WalkDir;
+
+use self::file_linter::FileLinter;
 
 pub struct ModuleLinter {
     pub configuration: Configuration,
@@ -46,7 +47,11 @@ impl ModuleLinter {
         let mut exit = false;
 
         for file in walk_dir {
-            let mut file_linter = FileLinter::new(&self, file.path().display().to_string());
+            let mut file_linter = FileLinter::new(
+                file.path().display().to_string(),
+                self.fix,
+                &self.configuration,
+            );
             exit &= file_linter.run();
         }
 

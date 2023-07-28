@@ -1,3 +1,0 @@
-tests/G0000/1.go:4:11: redundant parameter type "string" (G0000)
-tests/G0000/1.go:5:18: redundant parameter type "string" (G0000)
-tests/G0000/1.go:6:14: redundant parameter type "string" (G0000)

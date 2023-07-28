@@ -1,7 +1,9 @@
-package G0001
+package F0001
 
-// Match
+// No Match
 import (
+	_ "fmt"
+	_ "regexp"
+
 	_ "github.com/brianstrauch/gold/tests"
-	_ "github.com/spf13/pflag"
 )

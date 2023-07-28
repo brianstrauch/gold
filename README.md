@@ -12,5 +12,5 @@ A fast linter for Go, written in Rust.
 
 | Rule                        | Description                | Fix |
 | --------------------------- | -------------------------- | --- |
-| [G0000](tests/G0000/1.go)   | Redundant parameter types  | ✅  |
-| [G0001](tests/G0001)        | Unsorted imports           | ✅  |
+| [F0000](tests/F0000/1.go)   | Redundant parameter types  | ✅  |
+| [F0001](tests/F0001)        | Unsorted imports           | ✅  |

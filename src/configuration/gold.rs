@@ -13,7 +13,7 @@ pub struct Configuration {
 
 #[derive(Debug, Deserialize)]
 pub struct Settings {
-    pub G0001: Vec<String>,
+    pub F0001: Vec<String>,
 }
 
 impl Configuration {
@@ -21,7 +21,7 @@ impl Configuration {
         Configuration {
             enable: None,
             settings: Some(Settings {
-                G0001: vec![String::from("standard"), String::from("default")],
+                F0001: vec![String::from("standard"), String::from("default")],
             }),
             ignore: None,
         }
@@ -31,7 +31,7 @@ impl Configuration {
         Configuration {
             enable: None,
             settings: Some(Settings {
-                G0001: golangci_configuration.linters_settings.gci.sections,
+                F0001: golangci_configuration.linters_settings.gci.sections,
             }),
             ignore: Some(golangci_configuration.run.skip_dirs),
         }
