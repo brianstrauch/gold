@@ -3,16 +3,12 @@ extern crate lazy_static;
 
 mod configuration;
 mod error;
+mod file_linter;
 mod module_linter;
-mod query;
 
-use module_linter::{file_linter::FileLinter, ModuleLinter};
-use std::{env, fs, io, process::ExitCode};
-use tree_sitter::Language;
-
-extern "C" {
-    fn tree_sitter_go() -> Language;
-}
+use module_linter::ModuleLinter;
+use std::{env, io, process::ExitCode};
+use walkdir::WalkDir;
 
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
@@ -35,16 +31,32 @@ fn main() -> ExitCode {
 }
 
 pub fn lint(path: &str, fix: bool) -> io::Result<bool> {
-    let module_linter = ModuleLinter::new(fix);
+    let go_mod_files = WalkDir::new(path)
+        .into_iter()
+        .filter_entry(|e| {
+            e.file_name()
+                .to_str()
+                .map(|s| !s.starts_with('.') && !e.path().join("..").join("go.mod").is_file())
+                .unwrap_or(false)
+        })
+        .filter_map(|e| e.ok())
+        .filter(|e| {
+            e.file_name()
+                .to_str()
+                .map(|s| s == "go.mod")
+                .unwrap_or(false)
+        });
 
-    if fs::metadata(path)?.is_dir() {
-        Ok(module_linter.run(path))
-    } else {
-        let mut linter = FileLinter::new(
-            path.to_string(),
-            module_linter.fix,
-            &module_linter.configuration,
-        );
-        Ok(linter.run())
+    let mut exit = false;
+
+    for file in go_mod_files {
+        let module_linter = ModuleLinter::new(fix);
+
+        let mut dir = file.path().to_path_buf();
+        dir.pop();
+
+        exit &= module_linter.run(dir.to_str().unwrap());
     }
+
+    Ok(exit)
 }

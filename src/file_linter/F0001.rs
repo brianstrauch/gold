@@ -1,4 +1,4 @@
-use crate::{error::Error, query};
+use crate::{error::Error, file_linter::tree_sitter_go};
 use regex::Regex;
 use std::collections::HashSet;
 use tree_sitter::{Query, QueryCursor};
@@ -7,7 +7,8 @@ use tree_sitter_edit::{NodeId, Replace};
 use super::FileLinter;
 
 lazy_static! {
-    static ref QUERY: Query = query::new("(import_spec_list) @list");
+    static ref QUERY: Query =
+        tree_sitter::Query::new(unsafe { tree_sitter_go() }, "(import_spec_list) @list").unwrap();
     static ref STANDARD_IMPORTS: HashSet<&'static str> = HashSet::from([
         "archive/tar",
         "archive/zip",

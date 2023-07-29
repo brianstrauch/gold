@@ -7,7 +7,7 @@ use std::fs::{self, File};
 
 use tree_sitter::{Node, Parser, Tree};
 
-use crate::{configuration::gold::Configuration, tree_sitter_go};
+use crate::configuration::Configuration;
 
 pub struct FileLinter<'a> {
     pub path: String,
@@ -15,6 +15,10 @@ pub struct FileLinter<'a> {
     pub configuration: &'a Configuration,
     pub source: String,
     pub tree: Tree,
+}
+
+extern "C" {
+    fn tree_sitter_go() -> tree_sitter::Language;
 }
 
 impl<'a> FileLinter<'a> {

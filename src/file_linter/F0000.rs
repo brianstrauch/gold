@@ -1,12 +1,13 @@
 use tree_sitter::{Node, Query, QueryCursor};
 use tree_sitter_edit::{NodeId, Replace};
 
-use crate::{error::Error, query};
+use crate::{error::Error, file_linter::tree_sitter_go};
 
 use super::FileLinter;
 
 lazy_static! {
-    static ref QUERY: Query = query::new(
+    static ref QUERY: Query = tree_sitter::Query::new(
+        unsafe { tree_sitter_go() },
         r#"
         (parameter_list
             (parameter_declaration
@@ -14,8 +15,9 @@ lazy_static! {
                 type: (_) @kind
             ) @decl
         ) @list
-        "#,
-    );
+        "#
+    )
+    .unwrap();
 }
 
 struct Parameter<'a> {

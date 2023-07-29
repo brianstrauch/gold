@@ -3,17 +3,14 @@ use std::{fs, process::Command};
 
 #[test]
 fn test() {
-    for rule in ["F0000", "F0001"] {
-        let golden = fs::read_to_string(format!("tests/{rule}/{rule}.golden")).unwrap();
+    let golden = fs::read_to_string("tests/output.golden").unwrap();
 
-        let output = Command::new("cargo")
-            .arg("run")
-            .arg("--release")
-            .arg(format!("tests/{rule}"))
-            .output()
-            .unwrap();
-        let stdout = String::from_utf8(output.stdout).unwrap();
+    let output = Command::new("cargo")
+        .arg("run")
+        .arg("tests")
+        .output()
+        .unwrap();
+    let stdout = String::from_utf8(output.stdout).unwrap();
 
-        assert_eq!(golden, stdout);
-    }
+    assert_eq!(golden, stdout);
 }
