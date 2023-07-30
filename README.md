@@ -6,7 +6,7 @@ A fast linter for Go, written in Rust.
 
 ## Usage
 
-    gold <path> [--fix]
+    gold [path] [--fix]
 
 ## Rules
 
