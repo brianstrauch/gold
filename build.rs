@@ -1,9 +1,11 @@
 fn main() {
-    println!("cargo:rerun-if-changed=lib/tree-sitter-go/src/parser.c");
+    println!("cargo:rerun-if-changed=lib");
 
-    cc::Build::new()
-        .warnings(false)
-        .include("lib/tree-sitter-go/src")
-        .file("lib/tree-sitter-go/src/parser.c")
-        .compile("tree-sitter-go");
+    for dir in ["tree-sitter-go", "tree-sitter-go-mod"] {
+        cc::Build::new()
+            .warnings(false)
+            .include(format!("lib/{dir}/src"))
+            .file(format!("lib/{dir}/src/parser.c"))
+            .compile(dir);
+    }
 }

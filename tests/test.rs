@@ -1,16 +1,22 @@
+#[macro_use]
+extern crate duct;
+
 use pretty_assertions::assert_eq;
-use std::{fs, process::Command};
+use std::fs;
 
 #[test]
 fn test() {
-    let golden = fs::read_to_string("tests/output.golden").unwrap();
-
-    let output = Command::new("cargo")
-        .arg("run")
-        .arg("tests")
-        .output()
+    let output = cmd!("cargo", "run", "--quiet", "tests")
+        .unchecked()
+        .stderr_to_stdout()
+        .stdout_capture()
+        .run()
         .unwrap();
 
-    assert_eq!(String::from_utf8(output.stdout).unwrap(), golden);
+    assert_eq!(
+        String::from_utf8(output.stdout).unwrap(),
+        fs::read_to_string("tests/output.golden").unwrap()
+    );
+
     assert_eq!(output.status.success(), false);
 }

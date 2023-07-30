@@ -1,3 +1,6 @@
 [submodule "lib/tree-sitter-go"]
 	path = lib/tree-sitter-go
-	url = https://github.com/tree-sitter/tree-sitter-go
+	url = https://github.com/tree-sitter/tree-sitter-go.git
+[submodule "lib/tree-sitter-go-mod"]
+	path = lib/tree-sitter-go-mod
+	url = https://github.com/camdencheek/tree-sitter-go-mod

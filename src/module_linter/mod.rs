@@ -2,12 +2,21 @@ use crate::{
     configuration::{golangci::GolangciConfiguration, Configuration},
     file_linter::FileLinter,
 };
-use std::{collections::HashSet, fs::File, path::Path};
+use std::{
+    collections::HashSet,
+    fs::{self, File},
+    path::Path,
+};
+use tree_sitter::{Parser, QueryCursor};
 use walkdir::WalkDir;
 
 pub struct ModuleLinter {
     pub configuration: Configuration,
     pub fix: bool,
+}
+
+extern "C" {
+    fn tree_sitter_gomod() -> tree_sitter::Language;
 }
 
 impl ModuleLinter {
@@ -19,16 +28,21 @@ impl ModuleLinter {
     }
 
     pub fn run(mut self, dir: &str) -> bool {
-        eprintln!("Linting module at {}", dir);
+        let path = Path::new(dir);
 
-        if let Ok(file) = File::open(Path::new(dir).join(".gold.yml")) {
+        if let Some(module) = get_module(path) {
+            eprintln!("Module: {module}");
+        }
+
+        if let Ok(file) = File::open(path.join(".gold.yml")) {
+            eprintln!("Configuration: .gold.yml");
             self.configuration = serde_yaml::from_reader(&file).unwrap();
-        } else if let Ok(file) = File::open(Path::new(dir).join(".golangci.yml")) {
-            eprintln!("Could not find .gold.yml, using configuration from .golangci.yml");
+        } else if let Ok(file) = File::open(path.join(".golangci.yml")) {
+            eprintln!("Configuration: .golangci.yml");
             let gc: GolangciConfiguration = serde_yaml::from_reader(&file).unwrap();
             self.configuration = Configuration::from(gc);
         } else {
-            eprintln!("Could not find .gold.yml or .golangci.yml, using default configuration");
+            eprintln!("Configuration: default");
         }
 
         let mut ignore = HashSet::new();
@@ -58,6 +72,33 @@ impl ModuleLinter {
 
         exit
     }
+}
+
+fn get_module(path: &Path) -> Option<String> {
+    let mut cursor = QueryCursor::new();
+
+    let query = tree_sitter::Query::new(
+        unsafe { tree_sitter_gomod() },
+        "(module_directive (module_path) @path)",
+    )
+    .ok()?;
+
+    let mut parser = Parser::new();
+    parser.set_language(unsafe { tree_sitter_gomod() }).ok()?;
+
+    let source = fs::read_to_string(path.join("go.mod")).ok()?;
+    let tree = parser.parse(&source, None)?;
+
+    let module = cursor
+        .matches(&query, tree.root_node(), source.as_bytes())
+        .next()?
+        .captures[0]
+        .node
+        .utf8_text(source.as_bytes())
+        .ok()?
+        .to_string();
+
+    Some(module)
 }
 
 fn is_source_file(entry: &walkdir::DirEntry) -> bool {

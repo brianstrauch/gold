@@ -18,3 +18,4 @@ walkdir = "2.3.3"
 
 [dev-dependencies]
 pretty_assertions = "1.2.1"
+duct = "0.13.6"

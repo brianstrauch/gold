@@ -1,3 +1,5 @@
+Module: github.com/brianstrauch/gold/tests
+Configuration: .gold.yml
 tests/F0000/1.go:4:11: redundant parameter type "string" (F0000)
 tests/F0000/1.go:5:18: redundant parameter type "string" (F0000)
 tests/F0000/1.go:6:14: redundant parameter type "string" (F0000)
