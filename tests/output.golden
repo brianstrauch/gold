@@ -1,6 +1,6 @@
 Module: github.com/brianstrauch/gold/tests
 Configuration: .gold.yml
-tests/F0000/1_test.go:3:11: redundant parameter type "string" (F0000)
+tests/F0000/1_test.go:3:11: redundant parameter type "int" (F0000)
 tests/F0000/1_test.go:4:18: redundant parameter type "string" (F0000)
 tests/F0000/1_test.go:5:14: redundant parameter type "string" (F0000)
 tests/F0001/1_test.go:6:2: unsorted import "fmt" (F0001)
