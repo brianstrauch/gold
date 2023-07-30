@@ -1,9 +1,9 @@
 package F0001
 
-// No Match
 import (
-	_ "fmt"
-	_ "regexp"
+	"fmt"
 
-	_ "github.com/brianstrauch/gold/tests"
+	"github.com/spf13/pflag"
+
+	"github.com/brianstrauch/gold/tests/F0000"
 )
