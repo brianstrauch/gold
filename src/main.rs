@@ -36,7 +36,10 @@ pub fn lint(path: &str, fix: bool) -> io::Result<bool> {
         .filter_entry(|e| {
             e.file_name()
                 .to_str()
-                .map(|s| !s.starts_with('.') && !e.path().join("..").join("go.mod").is_file())
+                .map(|s| {
+                    !(s.starts_with('.') && s != "." && s != "..")
+                        && !e.path().join("..").join("go.mod").is_file()
+                })
                 .unwrap_or(false)
         })
         .filter_map(|e| e.ok())

@@ -19,7 +19,7 @@ impl ModuleLinter {
     }
 
     pub fn run(mut self, dir: &str) -> bool {
-        eprintln!("Linting {}", dir);
+        eprintln!("Linting module at {}", dir);
 
         if let Ok(file) = File::open(Path::new(dir).join(".gold.yml")) {
             self.configuration = serde_yaml::from_reader(&file).unwrap();

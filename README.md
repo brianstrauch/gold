@@ -1,6 +1,6 @@
 # Gold 🥇
 
-[![Gold](https://img.shields.io/badge/code%20style-gold-yellow)](https://github.com/)
+[![Gold](https://img.shields.io/badge/code%20style-gold-yellow)](https://github.com/brianstrauch/gold)
 
 A fast linter for Go, written in Rust.
 
