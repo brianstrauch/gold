@@ -7,3 +7,6 @@ settings:
     - standard
     - default
     - prefix(github.com/brianstrauch/gold/tests)
+
+ignore:
+  - ignore
