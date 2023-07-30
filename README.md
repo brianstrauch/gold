@@ -17,7 +17,7 @@ A fast linter for Go, written in Rust.
 
 ## Configuration
 
-* Gold searches the root of your Go Module for a .gold.yml file
+* Gold searches the root directory of your Go modules for a .gold.yml file
 * Gold can also understand .golangci.yml configuration files, if they exist
 * The following is an example of a .gold.yml configuration file:
 
