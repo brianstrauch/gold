@@ -47,7 +47,7 @@ pub fn lint(path: &str, fix: bool) -> io::Result<bool> {
                 .unwrap_or(false)
         });
 
-    let mut exit = false;
+    let mut exit = true;
 
     for file in go_mod_files {
         let module_linter = ModuleLinter::new(fix);

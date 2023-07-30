@@ -10,7 +10,7 @@ fn test() {
         .arg("tests")
         .output()
         .unwrap();
-    let stdout = String::from_utf8(output.stdout).unwrap();
 
-    assert_eq!(golden, stdout);
+    assert_eq!(String::from_utf8(output.stdout).unwrap(), golden);
+    assert_eq!(output.status.success(), false);
 }

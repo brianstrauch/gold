@@ -45,7 +45,7 @@ impl ModuleLinter {
             .filter_map(|e| e.ok())
             .filter(is_source_file);
 
-        let mut exit = false;
+        let mut exit = true;
 
         for file in walk_dir {
             let mut file_linter = FileLinter::new(
