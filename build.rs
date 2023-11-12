@@ -1,11 +1,13 @@
-fn main() {
-    println!("cargo:rerun-if-changed=lib");
+use std::path::PathBuf;
 
-    for dir in ["tree-sitter-go", "tree-sitter-go-mod"] {
+fn main() {
+    for lib in ["tree-sitter-go", "tree-sitter-go-mod"] {
+        let src: PathBuf = ["lib", lib, "src"].iter().collect();
+
         cc::Build::new()
             .warnings(false)
-            .include(format!("lib/{dir}/src"))
-            .file(format!("lib/{dir}/src/parser.c"))
-            .compile(dir);
+            .include(&src)
+            .file(src.join("parser.c"))
+            .compile(lib);
     }
 }
