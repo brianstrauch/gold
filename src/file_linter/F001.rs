@@ -27,9 +27,9 @@ struct Parameter<'a> {
     kind: Node<'a>,
 }
 
-// F0000 - Redundant parameter types
+// F001 - Redundant parameter types
 pub fn run(linter: &mut FileLinter) -> (Vec<Error>, Vec<Replace>) {
-    if !linter.configuration.is_enabled(String::from("F0000")) {
+    if !linter.configuration.is_enabled(String::from("F001")) {
         return (vec![], vec![]);
     }
 
@@ -65,7 +65,7 @@ pub fn run(linter: &mut FileLinter) -> (Vec<Error>, Vec<Replace>) {
                             errors.push(Error {
                                 filename: linter.path.clone(),
                                 position: last.kind.start_position(),
-                                rule: String::from("F0000"),
+                                rule: String::from("F001"),
                                 message: format!(r#"redundant parameter type "{}""#, last_kind),
                             });
                         }

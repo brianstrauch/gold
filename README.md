@@ -10,27 +10,27 @@ A fast linter for Go, written in Rust.
 
 ## Rules
 
-| Rule                 | Description                | Fix |
-| -------------------- | -------------------------- | --- |
-| [F0000](tests/F0000) | Redundant parameter types  | ✅  |
-| [F0001](tests/F0001) | Unsorted imports           | ✅  |
+| Rule               | Description                  | Fix |
+| ------------------ | ---------------------------- | --- |
+| [F001](tests/F001) | No redundant parameter types | ✅  |
+| [F002](tests/F002) | No unsorted imports          | ✅  |
 
 ## Configuration
 
 * Gold searches the root directory of your Go modules for a .gold.yml file
-* Gold can also understand .golangci.yml configuration files, if they exist
+* Gold can also read .golangci.yml configuration files, if they exist
 * The following is an example of a .gold.yml configuration file:
 
 ```yaml
 # rules to enable, default: [] (all rules)
 enable:
-    - F0000
-    - F0001
+    - F001
+    - F002
 
 # rule-specific settings
 settings:
     # order to sort imports by, default: [standard, default]
-    F0001:
+    F002:
         - standard
         - default
         - prefix(github.com/brianstrauch/gold/tests)

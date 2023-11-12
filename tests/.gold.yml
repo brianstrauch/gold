@@ -1,9 +1,9 @@
 enable:
-  - F0000
-  - F0001
+  - F001
+  - F002
 
 settings:
-  F0001:
+  F002:
     - standard
     - default
     - prefix(github.com/brianstrauch/gold/tests)

@@ -171,14 +171,14 @@ lazy_static! {
     static ref PREFIX_PATTERN: Regex = Regex::new(r"prefix\((.*)\)").unwrap();
 }
 
-// G0001 - Unsorted imports
+// F002 - Unsorted imports
 pub fn run(linter: &mut FileLinter) -> (Vec<Error>, Vec<Replace>) {
-    if !linter.configuration.is_enabled(String::from("F0001")) {
+    if !linter.configuration.is_enabled(String::from("F002")) {
         return (vec![], vec![]);
     }
 
     if let Some(settings) = &linter.configuration.settings {
-        let groups = &settings.F0001;
+        let groups = &settings.F002;
         let mut errors = vec![];
 
         let mut sorted_imports: Vec<Vec<String>> = vec![Vec::new(); groups.len()];
@@ -207,7 +207,7 @@ pub fn run(linter: &mut FileLinter) -> (Vec<Error>, Vec<Replace>) {
                         errors.push(Error {
                             filename: linter.path.clone(),
                             position: import_spec.start_position(),
-                            rule: String::from("F0001"),
+                            rule: String::from("F002"),
                             message: format!(r#"unsorted import "{import}""#),
                         });
                     }
@@ -216,7 +216,7 @@ pub fn run(linter: &mut FileLinter) -> (Vec<Error>, Vec<Replace>) {
                     errors.push(Error {
                         filename: linter.path.clone(),
                         position: import_spec.start_position(),
-                        rule: String::from("F0001"),
+                        rule: String::from("F002"),
                         message: format!(r#"unclassified import "{import}""#),
                     });
                 }

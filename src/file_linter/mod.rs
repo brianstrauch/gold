@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
-pub mod F0000;
-pub mod F0001;
+pub mod F001;
+pub mod F002;
 
 use std::fs::{self, File};
 
@@ -42,7 +42,7 @@ impl<'a> FileLinter<'a> {
         let mut all_errors = vec![];
         let mut all_editors = vec![];
 
-        let rules = vec![F0000::run, F0001::run];
+        let rules = vec![F001::run, F002::run];
         for rule in rules {
             let (errors, editors) = &mut rule(self);
             all_errors.append(errors);
